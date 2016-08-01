@@ -9,6 +9,7 @@ module ManageIQ::Providers
     require_nested :Refresher
     require_nested :Host
     require_nested :HostEsx
+    require_nested :OrchestrationStack
     require_nested :Provision
     require_nested :ProvisionViaPxe
     require_nested :ProvisionWorkflow
@@ -16,6 +17,7 @@ module ManageIQ::Providers
     require_nested :Vm
 
     include VimConnectMixin
+    include HasManyOrchestrationStackMixin
 
     before_save :stop_event_monitor_queue_on_change
     before_destroy :stop_event_monitor

@@ -20,6 +20,7 @@ module ManageIQ::Providers
 
         result[:folders], uids[:folders] = inv_to_ems_folder_hashes(inv)
         result[:resource_pools], uids[:resource_pools] = rp_inv_to_hashes(inv[:rp])
+        result[:orchestration_stacks], uids[:orchestration_stacks] = vapp_inv_to_hashes(inv[:vapp])
 
         result[:customization_specs] = customization_spec_inv_to_hashes(inv[:customization_specs]) if inv.key?(:customization_specs)
 
@@ -1302,7 +1303,7 @@ module ManageIQ::Providers
             :ems_ref_obj           => mor,
             :uid_ems               => mor,
             :name                  => URI.decode(data["name"].to_s),
-            :vapp                  => mor.vimType == "VirtualApp",
+            :vapp                  => false,
 
             :memory_reserve        => memory["reservation"],
             :memory_reserve_expand => memory["expandableReservation"].to_s.downcase == "true",
@@ -1318,6 +1319,26 @@ module ManageIQ::Providers
 
             :child_uids            => get_mors(data, 'resourcePool') + get_mors(data, 'vm')
           }
+          result << new_result
+          result_uids[mor] = new_result
+        end
+        return result, result_uids
+      end
+
+      def self.vapp_inv_to_hashes(inv)
+        result = []
+        result_uids = {}
+        return result, result_uids if inv.nil?
+
+        inv.each do |mor, data|
+          mor = data['MOR'] # Use the MOR directly from the data since the mor as a key may be corrupt
+
+          new_result = {
+            :type    => 'ManageIQ::Providers::Vmware::InfraManager::OrchestrationStack',
+            :ems_ref => mor,
+            :name    => data["name"]
+          }
+
           result << new_result
           result_uids[mor] = new_result
         end

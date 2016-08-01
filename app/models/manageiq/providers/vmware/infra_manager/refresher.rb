@@ -108,12 +108,6 @@ module ManageIQ::Providers
           end
         end
 
-        # Merge Virtual Apps into Resource Pools
-        if @vc_data.key?(:vapp)
-          @vc_data[:rp] ||= {}
-          @vc_data[:rp].merge!(@vc_data.delete(:vapp))
-        end
-
         EmsRefresh.log_inv_debug_trace(@vc_data, "#{_log.prefix} #{log_header} @vc_data:", 2)
       end
 

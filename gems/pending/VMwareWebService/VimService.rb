@@ -11,11 +11,12 @@ class VimService
       :ns       => 'urn:vim25',
       :path     => '/sdk',
       :port     => 443,
-      :rev      => '4.0',
+      :rev      => '6.0',
       :ssl      => true
     }
 
-    @vim = RbVmomi::VIM.new vim_opts
+    @vim     = RbVmomi::VIM.new vim_opts
+    @vim.rev = @vim.serviceContent.about.apiVersion
 
     @serviceInstanceMor = @vim.serviceInstance
     @sic                = @vim.serviceContent

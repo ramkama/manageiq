@@ -1,15 +1,9 @@
 require 'rbvmomi'
 require 'rbvmomi/pbm'
 
-PbmVimConnection = Struct.new(:host, :cookie)
-
 class PbmService
   def initialize(vim)
-    # RbVmomi::PBM#connect expects a RbVmomi::VIM object, use a struct
-    # to fake it out into using our vim Handsoap connection
-    pbm_vim_conn = PbmVimConnection.new(vim.server.dup, vim.session_cookie.dup)
-
-    @pbm = RbVmomi::PBM.connect(pbm_vim_conn, :insecure => true)
+    @pbm = RbVmomi::PBM.connect(vim, :insecure => true)
     @sic = @pbm.serviceContent
   end
 

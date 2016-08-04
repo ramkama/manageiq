@@ -27,4 +27,25 @@ class VimService
     @v4              = @apiVersion =~ /4\..*/
     @isVirtualCenter = @about.apiType == "VirtualCenter"
   end
+
+  def retrievePropertiesSimple(specSet, max_objects = nil)
+    objects = []
+
+    args = {
+      :specSet => specSet,
+      :options => RbVmomi::VIM::RetrieveOptions(:maxObjects => max_objects)
+    }
+
+    result = @vim.propertyCollector.RetrievePropertiesEx(args)
+    if result
+      objects.concat(result.objects)
+
+      while result && result.token
+        result = @vim.propertyCollector.ContinueRetrievePropertiesEx(:token => result.token)
+        objects.concat(result.objects) unless result.nil?
+      end
+    end
+
+    objects
+  end
 end

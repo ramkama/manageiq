@@ -18,14 +18,10 @@ class MiqVimClientBase < VimService
 
     @receiveTimeout = @@receiveTimeout
 
-    super(:uri => sdk_uri, :version => 1)
+    super(server)
 
     @connected  = false
     @connLock = Sync.new
-  end
-
-  def sdk_uri
-    URI::HTTPS.build(:host => server, :path => "/sdk")
   end
 
   def self.receiveTimeout=(val)

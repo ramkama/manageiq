@@ -1,15 +1,12 @@
-require "handsoap"
 require "rbvmomi"
 require 'VMwareWebService/VimTypes'
 
 class VimService
   attr_reader :sic, :about, :apiVersion, :isVirtualCenter, :v20, :v2, :v4, :serviceInstanceMor, :session_cookie
 
-  Handsoap.http_driver = :HTTPClient
-
-  def initialize(ep)
+  def initialize(server)
     vim_opts = {
-      :host     => @server,
+      :host     => server,
       :insecure => true,
       :ns       => 'urn:vim25',
       :path     => '/sdk',

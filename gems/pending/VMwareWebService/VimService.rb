@@ -1,24 +1,27 @@
 require "handsoap"
+require "rbvmomi"
 require 'VMwareWebService/VimTypes'
 
-class VimService < Handsoap::Service
+class VimService
   attr_reader :sic, :about, :apiVersion, :isVirtualCenter, :v20, :v2, :v4, :serviceInstanceMor, :session_cookie
 
   Handsoap.http_driver = :HTTPClient
 
   def initialize(ep)
-    super
+    vim_opts = {
+      :host     => @server,
+      :insecure => true,
+      :ns       => 'urn:vim25',
+      :path     => '/sdk',
+      :port     => 443,
+      :rev      => '4.0',
+      :ssl      => true
+    }
 
-    setNameSpace('urn:vim2')
+    @vim = RbVmomi::VIM.new vim_opts
 
-    @serviceInstanceMor = VimString.new("ServiceInstance", "ServiceInstance")
-
-    begin
-      @sic = retrieveServiceContent
-    rescue Handsoap::Fault
-      setNameSpace('urn:vim25')
-      @sic = retrieveServiceContent
-    end
+    @serviceInstanceMor = @vim.serviceInstance
+    @sic                = @vim.serviceContent
 
     @about           = @sic.about
     @apiVersion      = @about.apiVersion
@@ -26,9 +29,6 @@ class VimService < Handsoap::Service
     @v2              = @apiVersion =~ /2\..*/
     @v4              = @apiVersion =~ /4\..*/
     @isVirtualCenter = @about.apiType == "VirtualCenter"
-    @session_cookie  = nil
-
-    setNameSpace('urn:vim25') unless @v20
   end
 
   def acquireCloneTicket(sm)

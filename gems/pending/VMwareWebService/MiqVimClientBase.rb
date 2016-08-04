@@ -18,15 +18,6 @@ class MiqVimClientBase < VimService
 
     @receiveTimeout = @@receiveTimeout
 
-    on_http_client_init do |http_client, _headers|
-      http_client.ssl_config.verify_mode    = OpenSSL::SSL::VERIFY_NONE
-      http_client.ssl_config.verify_callback  = method(:verify_callback).to_proc
-      http_client.receive_timeout       = @receiveTimeout
-    end
-
-    on_log_header { |msg| $vim_log.info msg }
-    on_log_body   { |msg| $vim_log.debug msg } if $miq_wiredump
-
     super(:uri => sdk_uri, :version => 1)
 
     @connected  = false
@@ -62,7 +53,13 @@ class MiqVimClientBase < VimService
     $vim_log.debug "#{self.class.name}.connect(#{@connId}): #{$PROGRAM_NAME} #{ARGV.join(' ')}" if $vim_log.debug?
     @connLock.synchronize(:EX) do
       return if @connected
-      login(@sic.sessionManager, @username, @password)
+
+      login_args = {
+        :userName => @username,
+        :password => @password
+      }
+
+      @vim.serviceContent.sessionManager.Login login_args
       @connected = true
     end
   end
@@ -71,7 +68,7 @@ class MiqVimClientBase < VimService
     $vim_log.debug "#{self.class.name}.disconnect(#{@connId}): #{$PROGRAM_NAME} #{ARGV.join(' ')}" if $vim_log.debug?
     @connLock.synchronize(:EX) do
       return unless @connected
-      logout(@sic.sessionManager)
+      @vim.close
       @connected = false
     end
   end

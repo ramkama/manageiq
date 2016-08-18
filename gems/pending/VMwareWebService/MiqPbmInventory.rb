@@ -1,13 +1,13 @@
 require 'VMwareWebService/PbmService'
 
 module MiqPbmInventory
-  def pbm_initialize(vim)
+  def pbm_initialize
     begin
       # SPBM endpoint was introduced in vSphere Management SDK 5.5
       if @apiVersion < '5.5'
         $vim_log.info("MiqPbmInventory: VC version < 5.5, not connecting to SPBM endpoint")
       else
-        @pbm_svc = PbmService.new(vim)
+        @pbm_svc = PbmService.new
       end
     rescue => err
       $vim_log.warn("MiqPbmInventory: Failed to connect to SPBM endpoint: #{err}")

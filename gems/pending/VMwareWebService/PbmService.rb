@@ -2,8 +2,8 @@ require 'rbvmomi'
 require 'rbvmomi/pbm'
 
 class PbmService
-  def initialize(vim)
-    @pbm = RbVmomi::PBM.connect(vim, :insecure => true)
+  def initialize
+    @pbm = RbVmomi::PBM.connect(@vim, :insecure => true)
     @sic = @pbm.serviceContent
   end
 

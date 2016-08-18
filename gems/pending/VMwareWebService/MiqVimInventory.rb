@@ -2252,55 +2252,42 @@ class MiqVimInventory < MiqVimClientBase
   def getMoPropMulti(moa, path = nil)
     return [] if !moa || moa.empty?
     tmor = moa.first
-    raise "getMoPropMulti: item is not a managed object reference" unless tmor.respond_to? :vimType
+    raise "getMoPropMulti: item is not a managed object reference" unless tmor.class.respond_to? :wsdl_name
 
-    args = VimArray.new("ArrayOfPropertyFilterSpec") do |pfsa|
-      pfsa << VimHash.new("PropertyFilterSpec") do |pfs|
-        pfs.propSet = VimArray.new("ArrayOfPropertySpec") do |psa|
-          psa << VimHash.new("PropertySpec") do |ps|
-            ps.type = tmor.vimType
-            if !path
-              ps.all = "true"
-            else
-              ps.all = "false"
-              ps.pathSet = path
-            end
-          end
-        end
+    prop_spec_set = [
+      RbVmomi::VIM::PropertySpec(
+        :type    => tmor.class.wsdl_name,
+        :all     => (path.nil?) ? true : false,
+        :pathSet => path
+      )
+    ]
 
-        pfs.objectSet = VimArray.new("ArrayOfObjectSpec") do |osa|
-          moa.each do |mor|
-            VimHash.new("ObjectSpec") do |os|
-              os.obj = mor
-              osa << os
-            end
-          end
-        end
-      end
+    object_spec_set = moa.collect do |mor|
+        RbVmomi::VIM::ObjectSpec(:obj => mor)
     end
 
-    begin
-      oca = retrievePropertiesCompat(@propCol, args)
-    rescue HTTPClient::ReceiveTimeoutError => rte
-      $vim_log.info "MiqVimInventory(#{@server}, #{@username}).getMoPropMulti: retrieveProperties timed out, reverting to getMoPropMultiIter" if $vim_log
-      return getMoPropMultiIter(moa, path)
-    end
+    prop_filter_spec_set = [
+      RbVmomi::VIM::PropertyFilterSpec(
+        :propSet   => prop_spec_set,
+        :objectSet => object_spec_set
+      )
+    ]
 
-    return [] unless oca
+    objects = retrievePropertiesSimple(prop_filter_spec_set)
 
-    oca = VimArray.new { |va| va << oca } unless oca.kind_of?(Array)
-    oca.each do |oc|
-      oc.MOR = oc.obj
-      oc.delete('obj')
+    return [] unless objects
 
-      oc.propSet = [oc.propSet] unless oc.propSet.kind_of?(Array)
-      oc.propSet.each do |ps|
+    objects.to_a.collect do |oc|
+      object = VimHash.new(oc.obj.class.wsdl_name)
+      object.MOR = oc.obj._ref
+
+      oc.propSet.to_a.each do |ps|
         #
         # Here, ps.name can be a property path in the form: a.b.c
         # If that's the case, we should set the target to: propHash['a']['b']['c']
         # creating intermediate nodes as needed.
         #
-        h, k = hashTarget(oc, ps.name)
+        h, k = hashTarget(object, ps.name)
         if !h[k]
           h[k] = ps.val
         elsif h[k].kind_of? Array
@@ -2312,20 +2299,10 @@ class MiqVimInventory < MiqVimClientBase
           end
         end
       end # oc.propSet.each
-      oc.delete('propSet')
-    end
 
-    oca
+      object
+    end
   end # def getMoPropMulti
-
-  def getMoPropMultiIter(moa, path = nil)
-    oca = []
-    moa.each do |mo|
-      oc = getMoProp_local(mo, path)
-      oca << oc if oc
-    end
-    oca
-  end
 
   def self.setSelector(selSpec)
     raise "MiqVimBroker.setSelector: selSpec must be a hash, received #{selSpec.class}" unless selSpec.kind_of?(Hash)

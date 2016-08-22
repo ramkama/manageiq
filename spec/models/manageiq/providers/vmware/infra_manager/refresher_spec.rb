@@ -23,19 +23,21 @@ describe ManageIQ::Providers::Vmware::InfraManager::Refresher do
   end
 
   it "will perform a full refresh" do
-    EmsRefresh.refresh(@ems)
-    @ems.reload
+    2.times do # Run twice to verify that a second run with existing data does not change anything
+      EmsRefresh.refresh(@ems)
+      @ems.reload
 
-    assert_table_counts
-    assert_ems
-    assert_specific_cluster
-    assert_specific_storage
-    assert_specific_storage_cluster
-    assert_specific_storage_profile
-    assert_specific_host
-    assert_specific_vm
-    assert_cpu_layout
-    assert_relationship_tree
+      assert_table_counts
+      assert_ems
+      assert_specific_cluster
+      assert_specific_storage
+      assert_specific_storage_cluster
+      assert_specific_storage_profile
+      assert_specific_host
+      assert_specific_vm
+      assert_cpu_layout
+      assert_relationship_tree
+    end
   end
 
   it 'handles switch deletion' do

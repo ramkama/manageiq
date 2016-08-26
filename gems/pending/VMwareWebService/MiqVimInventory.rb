@@ -1856,10 +1856,7 @@ class MiqVimInventory < MiqVimClientBase
       @inventoryHash = Hash.new { |h, k| h[k] = [] }
 
       $vim_log.info "MiqVimInventory(#{@server}, #{@username}).inventoryHash_locked: calling retrieveProperties" if $vim_log
-      objects = retrievePropertiesSimple(@spec)
-      $vim_log.info "MiqVimInventory(#{@server}, #{@username}).inventoryHash_locked: returned from retrieveProperties" if $vim_log
-
-      objects.each do |oc|
+      retrievePropertiesIter(@spec) do |oc|
         # RbVmomi keeps a connection and soap instance per object
         # but we do not need them here so nil them out
         oc.obj.instance_variable_set(:@connection, nil)
@@ -1869,6 +1866,8 @@ class MiqVimInventory < MiqVimClientBase
         # RbVmomi::VIM::VirtualMachine -> "VirtualMachine"
         @inventoryHash[oc.obj.class.wsdl_name] << oc.obj
       end
+
+      $vim_log.info "MiqVimInventory(#{@server}, #{@username}).inventoryHash_locked: returned from retrieveProperties" if $vim_log
     ensure
       @cacheLock.sync_unlock if unlock
     end
@@ -2257,7 +2256,7 @@ class MiqVimInventory < MiqVimClientBase
     prop_spec_set = [
       RbVmomi::VIM::PropertySpec(
         :type    => tmor.class.wsdl_name,
-        :all     => (path.nil?) ? true : false,
+        :all     => path.nil?,
         :pathSet => path
       )
     ]
@@ -2273,35 +2272,36 @@ class MiqVimInventory < MiqVimClientBase
       )
     ]
 
-    objects = retrievePropertiesSimple(prop_filter_spec_set)
+    objects = []
 
-    return [] unless objects
+    retrievePropertiesIter(prop_filter_spec_set) do |oc|
+      vim_type = oc.obj.class.wsdl_name
 
-    objects.to_a.collect do |oc|
-      object = VimHash.new(oc.obj.class.wsdl_name)
-      object.MOR = oc.obj._ref
+      objects << VimHash.new(vim_type) do |object|
+        object.MOR = oc.obj._ref
 
-      oc.propSet.to_a.each do |ps|
-        #
-        # Here, ps.name can be a property path in the form: a.b.c
-        # If that's the case, we should set the target to: propHash['a']['b']['c']
-        # creating intermediate nodes as needed.
-        #
-        h, k = hashTarget(object, ps.name)
-        if !h[k]
-          h[k] = ps.val
-        elsif h[k].kind_of? Array
-          h[k] << ps.val
-        else
-          h[k] = VimArray.new do |arr|
-            arr << h[k]
-            arr << ps.val
+        oc.propSet.to_a.each do |ps|
+          #
+          # Here, ps.name can be a property path in the form: a.b.c
+          # If that's the case, we should set the target to: propHash['a']['b']['c']
+          # creating intermediate nodes as needed.
+          #
+          h, k = hashTarget(object, ps.name)
+          if !h[k]
+            h[k] = ps.val
+          elsif h[k].kind_of? Array
+            h[k] << ps.val
+          else
+            h[k] = VimArray.new do |arr|
+              arr << h[k]
+              arr << ps.val
+            end
           end
-        end
-      end # oc.propSet.each
-
-      object
+        end # oc.propSet.each
+      end
     end
+
+    objects
   end # def getMoPropMulti
 
   def self.setSelector(selSpec)

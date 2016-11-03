@@ -159,6 +159,27 @@ module ManageIQ::Providers::Vmware::InfraManager::Provision::Customization
           fixed_ip.ipAddress = ip_address
         end
       end
+
+      case get_option(nil, nic[:ipv6_addr_mode])
+      when "dhcp"
+        adapter.ipV6Spec = VimHash.new("CustomizationIPSettingsIpV6AddressSpec") do |ipv6_spec|
+          _log.info("Using DHCP IPv6 settings")
+          ipv6_spec.ip = VimHash.new("CustomizationDhcpIpV6Generator")
+        end
+      when "static"
+        adapter.ipV6Spec = VimHash.new("CustomizationIPSettingsIpV6AddressSpec") do |ipv6_spec|
+          ipv6_spec.gateway = get_option(nil, nic[:ipv6_gateway])
+          ipv6_spec.ip      = VimHash.new("CustomizationFixedIpV6") do |fixed_ipv6|
+            ipv6_address     = get_option(nil, nic[:ipv6_address])
+            ipv6_subnet_mask = get_option(nil, nic[:ipv6_subnet_mask]).to_i
+
+            _log.info("Using Fixed IPv6 address[#{ipv6_address}/#{ipv6_subnet_mask}]")
+
+            fixed_ipv6.ipAddress  = ipv6_address
+            fixed_ipv6.subnetMask = ipv6_subnet_mask
+          end
+        end
+      end
     end
 
     adjust_nicSettingMap(spec)

@@ -144,12 +144,13 @@ module ManageIQ::Providers::Vmware::InfraManager::Provision::Customization
       set_spec_option(adapter, :primaryWINS,   nil, nil, nil, wins_server[0])
       set_spec_option(adapter, :secondaryWINS, nil, nil, nil, wins_server[1])
 
-      if get_option(nil, nic[:addr_mode]) == "dhcp"
+      case get_option(nil, nic[:addr_mode])
+      when "dhcp"
         _log.info "Using DHCP IP settings"
         adapter.ip = VimHash.new("CustomizationDhcpIpGenerator")
         adapter.delete('gateway')
         adapter.delete('subnetMask')
-      else
+      when "static"
         set_spec_array_option(adapter, :gateway, nil, nic[:gateway])
         set_spec_option(adapter, :subnetMask, nil, nil, nil, nic[:subnet_mask])
         adapter.ip = VimHash.new("CustomizationFixedIp") do |fixed_ip|

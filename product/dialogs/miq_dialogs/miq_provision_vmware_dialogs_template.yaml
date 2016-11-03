@@ -235,6 +235,7 @@
           :values:
             static: Static
             dhcp: DHCP
+            disabled: Disabled
           :description: Address Mode
           :required: false
           :display: :edit

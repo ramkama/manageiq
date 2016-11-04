@@ -108,8 +108,9 @@ module ManageIQ::Providers::Vmware::InfraManager::Provision::Customization
     nics = options[:nic_settings].to_miq_a
     nic = nics[0]
     nic = {} if nic.blank?
-    [:dns_domain, :dns_servers, :sysprep_netbios_mode, :wins_servers, :addr_mode,
-     :gateway, :subnet_mask, :ip_addr].each { |key| nic[key] = options[key] }
+    [:dns_domain, :dns_servers, :sysprep_netbios_mode, :wins_servers,
+     :addr_mode, :gateway, :subnet_mask, :ip_addr,
+     :ipv6_addr_mode, :ipv6_gateway, :ipv6_subnet_mask, :ipv6_addr].each { |key| nic[key] = options[key] }
     nics[0] = nic
 
     options[:nic_settings] = nics

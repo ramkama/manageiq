@@ -43,6 +43,14 @@ class ManageIQ::Providers::Vmware::InfraManager
             storage_profile_inv_by_vm_inv(vm_data)
         end
 
+      when EmsFolder
+        filtered_data = Hash.new { |h, k| h[k] = {} }
+
+        folder_data = folder_inv_by_folder(target)
+        unless folder_data.nil?
+          filtered_data[:folder], filtered_data[:dc], filtered_data[:cluster], filtered_data[:host_res] =
+            ems_metadata_inv_by_folder_inv(folder_data)
+        end
       end
 
       filtered_counts = filtered_data.inject({}) { |h, (k, v)| h[k] = v.blank? ? 0 : v.length; h }
@@ -70,6 +78,10 @@ class ManageIQ::Providers::Vmware::InfraManager
 
     def vm_inv_by_vm(vm)
       inv_by_ar_object(@vc_data[:vm], vm)
+    end
+
+    def folder_inv_by_folder(folder)
+      inv_by_ar_object(@vc_data[ems_metadata_target_to_inv_key(folder)], folder)
     end
 
     ### Collection methods by Host inv
@@ -264,6 +276,15 @@ class ManageIQ::Providers::Vmware::InfraManager
       return storage_profile_inv, storage_profile_datastore_inv, storage_profile_entity_inv
     end
 
+    def ems_metadata_inv_by_folder_inv(folder_inv)
+      inv = {:folder => {}, :dc => {}, :cluster => {}, :host_res => {}}
+
+      folder_inv.each do |folder_mor, folder_data|
+      end
+
+      return inv[:folder], inv[:dc], inv[:cluster], inv[:host_res]
+    end
+
     ### Helper methods for collection methods
 
     def vm_parent_rp(vm_mor, data_source)
@@ -376,6 +397,17 @@ class ManageIQ::Providers::Vmware::InfraManager
 
     def ems_metadata_target_by_mor(*args)
       RefreshParser.inv_target_by_mor(*args)
+    end
+
+    def ems_metadata_target_to_inv_key(target)
+      case target
+        when Datacenter
+          :dc
+        when EmsCluster
+          :cluster
+        else
+          :folder
+        end
     end
   end
 end

@@ -352,12 +352,28 @@ class ManageIQ::Providers::Vmware::InfraManager
         inv_type, inv = ems_metadata_target_by_mor(inv_mor, @vc_data)
         break if inv.nil?
 
+        if inv_mor == folder_mor
+          ems_metadata_inv_children(inv, ems_metadata)
+        end
+
         ems_metadata << [inv_type, inv_mor, inv]
 
         inv_mor = inv['parent']
       end
 
       ems_metadata
+    end
+
+    def ems_metadata_inv_children(inv, ems_metadata)
+      children = inv.fetch_path("childEntity")
+      children ||= ["vmFolder", "hostFolder", "networkFolder", "datastoreFolder"].collect { |key| inv.fetch_path(key) }.compact
+
+      children.each do |inv_mor|
+        inv_type, inv = ems_metadata_target_by_mor(inv_mor, @vc_data)
+        ems_metadata << [inv_type, inv_mor, inv]
+
+        ems_metadata_inv_children(inv, ems_metadata)
+      end
     end
 
     def rp_metadata_inv_by_vm_mor(vm_mor, data_source)

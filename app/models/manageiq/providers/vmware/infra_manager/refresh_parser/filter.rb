@@ -280,6 +280,9 @@ class ManageIQ::Providers::Vmware::InfraManager
       inv = {:folder => {}, :dc => {}, :cluster => {}, :host_res => {}}
 
       folder_inv.each do |folder_mor, folder_data|
+        ems_metadata_inv_by_folder_mor(folder_mor).each do |type, mor, data|
+          inv[type][mor] ||= data
+        end
       end
 
       return inv[:folder], inv[:dc], inv[:cluster], inv[:host_res]
@@ -335,6 +338,23 @@ class ManageIQ::Providers::Vmware::InfraManager
 
         # Find the next parent
         parent_mor = parent['parent']
+      end
+
+      ems_metadata
+    end
+
+    def ems_metadata_inv_by_folder_mor(folder_mor)
+      ems_metadata = []
+      inv_mor = folder_mor
+
+      # traverse all parents
+      until inv_mor.nil?
+        inv_type, inv = ems_metadata_target_by_mor(inv_mor, @vc_data)
+        break if inv.nil?
+
+        ems_metadata << [inv_type, inv_mor, inv]
+
+        inv_mor = inv['parent']
       end
 
       ems_metadata

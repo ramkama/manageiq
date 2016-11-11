@@ -27,6 +27,13 @@ class DRb::DRbMessage
     rescue
       str = Marshal::dump(make_proxy(obj, error))
     end
+
+    begin
+      _obj = Marshal::load(str)
+    rescue
+      $vim_log.warn "#{self.class.name}##{__method__}: failed to Marshal::load obj: #{obj.inspect} str: #{str.inspect}"
+    end
+
     ret = [str.size].pack('N') + str
 
     $vim_log.debug "DRbMessage#dump size: #{str.size} csum: #{Digest::MD5.hexdigest(ret)}"

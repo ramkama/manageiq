@@ -5,6 +5,45 @@ require 'sync'
 require 'VMwareWebService/MiqVimInventory'
 require 'VMwareWebService/VimTypes'
 
+class DRb::DRbMessage
+  def load(soc)  # :nodoc:
+    begin
+      sz = soc.read(4)        # sizeof (N)
+    rescue
+      raise(DRbConnError, $!.message, $!.backtrace)
+    end
+    raise(DRbConnError, 'connection closed') if sz.nil?
+    raise(DRbConnError, 'premature header') if sz.size < 4
+    sz = sz.unpack('N')[0]
+    raise(DRbConnError, "too large packet #{sz}") if @load_limit < sz
+    begin
+      str = soc.read(sz)
+    rescue
+      raise(DRbConnError, $!.message, $!.backtrace)
+    end
+    raise(DRbConnError, 'connection closed') if str.nil?
+    raise(DRbConnError, 'premature marshal format(can\'t read)') if str.size < sz
+    $vim_log.debug "#{self.class.name} #{__method__}: size: #{sz} csum: #{Digest::MD5.hexdigest(str)}"
+    DRb.mutex.synchronize do
+      begin
+        save = Thread.current[:drb_untaint]
+        Thread.current[:drb_untaint] = []
+        Marshal::load(str)
+      rescue NameError, ArgumentError
+        DRbUnknown.new($!, str)
+      rescue TypeError => e
+        $vim_log.warn "#{self.class.name} #{__method__}: #{e.inspect} str: #{str.inspect}"
+        raise e
+      ensure
+        Thread.current[:drb_untaint].each do |x|
+          x.untaint
+        end
+        Thread.current[:drb_untaint] = save
+      end
+    end
+  end
+end
+
 class MiqVimBroker
   class VimBrokerIdConv < DRb::DRbIdConv
     def to_obj(ref)

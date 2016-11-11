@@ -36,10 +36,10 @@ class DRb::DRbMessage
 
     ret = [str.size].pack('N') + str
 
-    $vim_log.debug "DRbMessage#dump size: #{str.size} csum: #{Digest::MD5.hexdigest(ret)}"
+    $vim_log.debug "#{self.class.name}##{__method__}: size: #{str.size} csum: #{Digest::MD5.hexdigest(ret)}"
 
     if str.size > 52428800 # 50MB default load_limit
-      $vim_log.warn "DRbMessage#dump message size greater than default load_limit: #{str.inspect}"
+      $vim_log.warn "#{self.class.name}##{__method__}: message size greater than default load_limit: #{str.inspect}"
     end
 
     ret

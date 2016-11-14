@@ -86,6 +86,32 @@ describe ManageIQ::Providers::Vmware::InfraManager::RefreshParser::Filter do
       end
     end
 
+    context "with one datacenter" do
+      let(:dc)          { FactoryGirl.create(:datacenter, :ems_ref => "datacenter-1", :ems_ref_obj => "datacenter-1", :name => "dc") }
+      let(:root_folder) { FactoryGirl.create(:ems_folder, :ems_ref => "group-d1",     :name => "Datacenters") }
+      let(:vm_folder)   { FactoryGirl.create(:ems_folder, :ems_ref => "group-v3",     :name => "vm") }
+      let(:vc_data) do
+        inv = Hash.new { |h, k| h[k] = {} }
+
+        inv[:dc][dc.ems_ref] = {
+          "MOR"    => dc.ems_ref,
+          "parent" => root_folder.ems_ref
+        }
+
+        inv[:folder][root_folder.ems_ref] = {
+          "MOR"         => root_folder.ems_ref,
+          "childEntity" => [dc.ems_ref]
+        }
+
+        inv[:folder][vm_folder.ems_ref] = {
+          "MOR"         => vm_folder.ems_ref,
+          "parent"      => dc.ems_ref
+        }
+
+        inv
+      end
+    end
+
     context "with two datacenters" do
       let(:dc1)         { FactoryGirl.create(:datacenter, :ems_ref => "datacenter-1", :ems_ref_obj => "datacenter-1", :name => "dc1") }
       let(:dc2)         { FactoryGirl.create(:datacenter, :ems_ref => "datacenter-2", :name => "dc2") }

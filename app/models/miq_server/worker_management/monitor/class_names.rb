@@ -15,6 +15,7 @@ module MiqServer::WorkerManagement::Monitor::ClassNames
     ManageIQ::Providers::Openstack::InfraManager::MetricsCollectorWorker
     MiqEmsMetricsProcessorWorker
     MiqEmsRefreshCoreWorker
+    MiqEmsRefreshSkeletalWorker
     ManageIQ::Providers::Azure::CloudManager::RefreshWorker
     ManageIQ::Providers::Azure::NetworkManager::RefreshWorker
     ManageIQ::Providers::Amazon::CloudManager::RefreshWorker

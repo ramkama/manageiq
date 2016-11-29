@@ -112,7 +112,10 @@ class MiqEmsRefreshSkeletalWorker::Runner < MiqWorker::Runner
 
     case kind
     when 'enter', 'modify'
-      target = EmsRefresh.save_new_target(:vm => {:ems_ref => mor, :ems_id => ems_id})
+      case mor.vimType
+      when 'VirtualMachine'
+        target = EmsRefresh.save_new_target(:vm => {:ems_ref => mor, :ems_id => ems_id}, :ems_id => ems_id)
+      end
     when 'leave'
       # Delete the managed entity
     end

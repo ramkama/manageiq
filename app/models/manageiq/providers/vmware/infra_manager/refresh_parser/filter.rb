@@ -42,7 +42,12 @@ class ManageIQ::Providers::Vmware::InfraManager
           filtered_data[:storage_profile], filtered_data[:storage_profile_datastore], filtered_data[:storage_profile_entity] =
             storage_profile_inv_by_vm_inv(vm_data)
         end
-
+      when Storage
+        filtered_data = Hash.new { |h, k| h[k] = {} }
+        storage_data = storage_inv_by_storage(target)
+        unless storage_data.nil?
+          filtered_data[:storage] = storage_data
+        end
       end
 
       filtered_counts = filtered_data.inject({}) { |h, (k, v)| h[k] = v.blank? ? 0 : v.length; h }
@@ -70,6 +75,10 @@ class ManageIQ::Providers::Vmware::InfraManager
 
     def vm_inv_by_vm(vm)
       inv_by_ar_object(@vc_data[:vm], vm)
+    end
+
+    def storage_inv_by_storage(storage)
+      inv_by_ar_object(@vc_data[:storage], storage)
     end
 
     ### Collection methods by Host inv

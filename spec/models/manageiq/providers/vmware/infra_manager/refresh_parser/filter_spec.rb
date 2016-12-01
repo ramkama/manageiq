@@ -102,8 +102,11 @@ describe ManageIQ::Providers::Vmware::InfraManager::RefreshParser::Filter do
         inv = Hash.new { |h, k| h[k] = {} }
 
         inv[:dc][dc.ems_ref]                   = {
-          "MOR"    => dc.ems_ref,
-          "parent" => root_folder.ems_ref
+          "MOR"             => dc.ems_ref,
+          "parent"          => root_folder.ems_ref,
+          "datastoreFolder" => datastore_folder.ems_ref,
+          "hostFolder"      => host_folder.ems_ref,
+          "vmFolder"        => vm_folder.ems_ref
         }
 
         inv[:folder][root_folder.ems_ref]      = {

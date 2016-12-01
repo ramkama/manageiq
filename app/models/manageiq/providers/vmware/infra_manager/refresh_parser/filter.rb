@@ -47,10 +47,13 @@ class ManageIQ::Providers::Vmware::InfraManager
         storage_data = storage_inv_by_storage(target)
         unless storage_data.nil?
           filtered_data[:storage] = storage_data
-          filtered_data[:host]    = host_inv_by_storage_inv(storage_data)
+          filtered_data[:host]    = host_data = host_inv_by_storage_inv(storage_data)
           filtered_data[:vm]      = vm_inv_by_storage_inv(storage_data)
+          filtered_data[:dvswitch], filtered_data[:dvportgroup] =
+                                    dvswitch_and_dvportgroup_inv_by_host_inv(host_data)
           filtered_data[:folder], filtered_data[:dc], filtered_data[:cluster], filtered_data[:host_res] =
                                     ems_metadata_inv_by_storage_inv(storage_data)
+          filtered_data[:rp]      = rp_inv_by_host_inv(host_data)
         end
       end
 

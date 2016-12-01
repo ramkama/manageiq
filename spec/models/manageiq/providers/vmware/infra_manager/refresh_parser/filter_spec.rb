@@ -201,6 +201,12 @@ describe ManageIQ::Providers::Vmware::InfraManager::RefreshParser::Filter do
 
           expect(filtered_data[:host].keys).to eq([host1.ems_ref])
         end
+
+        it "returns VMs on that storage" do
+          filtered_data = @refresher.filter_vc_data(ems, storage)
+
+          expect(filtered_data[:vm].keys).to eq([vm.ems_ref])
+        end
       end
     end
   end

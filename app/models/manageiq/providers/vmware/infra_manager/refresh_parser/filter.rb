@@ -48,6 +48,7 @@ class ManageIQ::Providers::Vmware::InfraManager
         unless storage_data.nil?
           filtered_data[:storage] = storage_data
           filtered_data[:host]    = host_inv_by_storage_inv(storage_data)
+          filtered_data[:vm]      = vm_inv_by_storage_inv(storage_data)
         end
       end
 
@@ -278,7 +279,7 @@ class ManageIQ::Providers::Vmware::InfraManager
       host_inv = {}
       return host_inv if @vc_data[:host].empty?
 
-      hosts = @vc_data[:host] || {}
+      hosts = @vc_data[:host]
 
       storage_inv.each do |storage_mor, storage_data|
         host_mounts = storage_data["host"]
@@ -291,6 +292,21 @@ class ManageIQ::Providers::Vmware::InfraManager
       end
 
       host_inv
+    end
+
+    def vm_inv_by_storage_inv(storage_inv)
+      vm_inv = {}
+      return vm_inv if @vc_data[:vm].empty?
+
+      vms = @vc_data[:vm]
+
+      storage_mors = storage_inv.keys
+      vms.each do |vm_mor, vm_data|
+        vm_datastores = vm_data['datastore'].to_a
+
+        # Check if the VM's datastores include any of the storages we're targeting
+        vm_inv[vm_mor] = vm_data if vm_datastores & storage_mors
+      end
     end
 
     ### Helper methods for collection methods

@@ -7,6 +7,12 @@ FactoryGirl.define do
     store_type "VMFS"
   end
 
+  factory :storage_vmware_with_ref, :parent => :storage do
+    store_type "VMFS"
+    sequence(:ems_ref)     { |n| "datastore-#{seq_padded_for_sorting(n)}" }
+    sequence(:ems_ref_obj) { |n| VimString.new("datastore-#{seq_padded_for_sorting(n)}", "Datastore", "ManagedObjectReference") }
+  end
+
   factory :storage_nfs, :parent => :storage do
     store_type "NFS"
   end

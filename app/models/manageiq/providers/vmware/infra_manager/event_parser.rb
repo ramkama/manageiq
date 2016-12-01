@@ -122,6 +122,15 @@ module ManageIQ::Providers::Vmware::InfraManager::EventParser
       end
     end
 
+    # Get the datastore information
+    if event.key?('ds')
+      ds_data = event['ds']
+      ds_ems_ref = ds_data['datastore']
+      result[:storage_ems_ref] = ds_ems_ref.to_s unless ds_ems_ref.nil?
+      ds_name = ds_data['name']
+      result[:storage_name] = URI.decode(ds_name) unless ds_name.nil?
+    end
+
     result
   end
 end

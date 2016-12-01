@@ -195,6 +195,12 @@ describe ManageIQ::Providers::Vmware::InfraManager::RefreshParser::Filter do
           storage_hash = vc_data[:storage][storage.ems_ref]
           expect(filtered_data[:storage]).to eq(storage.ems_ref => storage_hash)
         end
+
+        it "returns only hosts that have the storage mounted" do
+          filtered_data = @refresher.filter_vc_data(ems, storage)
+
+          expect(filtered_data[:host].keys).to eq([host1.ems_ref])
+        end
       end
     end
   end

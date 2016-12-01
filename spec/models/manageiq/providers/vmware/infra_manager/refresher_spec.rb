@@ -185,6 +185,13 @@ describe ManageIQ::Providers::Vmware::InfraManager::Refresher do
     expect(vm.host).to eq(vm2.host)
   end
 
+  it 'handles storage target-refresh without deleting anything' do
+    EmsRefresh.refresh(@ems)
+    storage = Storage.first
+    EmsRefresh.refresh(storage)
+    assert_table_counts
+  end
+
   def assert_table_counts
     expect(ExtManagementSystem.count).to eq(1)
     expect(Datacenter.count).to eq(3)

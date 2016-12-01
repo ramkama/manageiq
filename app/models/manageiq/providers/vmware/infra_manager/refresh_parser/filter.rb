@@ -47,6 +47,7 @@ class ManageIQ::Providers::Vmware::InfraManager
         storage_data = storage_inv_by_storage(target)
         unless storage_data.nil?
           filtered_data[:storage] = storage_data
+          filtered_data[:host]    = host_inv_by_storage_inv(storage_data)
         end
       end
 
@@ -271,6 +272,25 @@ class ManageIQ::Providers::Vmware::InfraManager
       end
 
       return storage_profile_inv, storage_profile_datastore_inv, storage_profile_entity_inv
+    end
+
+    def host_inv_by_storage_inv(storage_inv)
+      host_inv = {}
+      return host_inv if @vc_data[:host].empty?
+
+      hosts = @vc_data[:host] || {}
+
+      storage_inv.each do |storage_mor, storage_data|
+        host_mounts = storage_data["host"]
+        next if host_mounts.nil?
+
+        host_mounts.each do |host_mount|
+          host_mor = host_mount["key"]
+          host_inv[host_mor] = hosts[host_mor]
+        end
+      end
+
+      host_inv
     end
 
     ### Helper methods for collection methods

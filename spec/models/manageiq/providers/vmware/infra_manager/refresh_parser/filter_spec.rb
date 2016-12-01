@@ -207,6 +207,14 @@ describe ManageIQ::Providers::Vmware::InfraManager::RefreshParser::Filter do
 
           expect(filtered_data[:vm].keys).to eq([vm.ems_ref])
         end
+
+        it "returns folders and datacenters" do
+          filtered_data = @refresher.filter_vc_data(ems, storage)
+
+          expect(filtered_data[:dc].count).to    eq(1)
+          expect(filtered_data[:dc].keys).to     include(dc.ems_ref)
+          expect(filtered_data[:folder].keys).to include(datastore_folder.ems_ref, root_folder.ems_ref)
+        end
       end
     end
   end

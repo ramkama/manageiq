@@ -49,6 +49,8 @@ class ManageIQ::Providers::Vmware::InfraManager
           filtered_data[:storage] = storage_data
           filtered_data[:host]    = host_inv_by_storage_inv(storage_data)
           filtered_data[:vm]      = vm_inv_by_storage_inv(storage_data)
+          filtered_data[:folder], filtered_data[:dc], filtered_data[:cluster], filtered_data[:host_res] =
+                                    ems_metadata_inv_by_storage_inv(storage_data)
         end
       end
 
@@ -309,6 +311,18 @@ class ManageIQ::Providers::Vmware::InfraManager
       end
     end
 
+    def ems_metadata_inv_by_storage_inv(storage_inv)
+      inv = {:folder => {}, :dc => {}, :cluster => {}, :host_res => {}}
+
+      storage_inv.each_key do |storage_mor|
+        ems_metadata_inv_by_storage_mor(storage_mor, @vc_data).each do |type, mor, data|
+          inv[type][mor] ||= data
+        end
+      end
+
+      return inv[:folder], inv[:dc], inv[:cluster], inv[:host_res]
+    end
+
     ### Helper methods for collection methods
 
     def vm_parent_rp(vm_mor, data_source)
@@ -358,6 +372,26 @@ class ManageIQ::Providers::Vmware::InfraManager
         ems_metadata << [parent_type, parent_mor, parent]
 
         # Find the next parent
+        parent_mor = parent['parent']
+      end
+
+      ems_metadata
+    end
+
+    def ems_metadata_inv_by_storage_mor(storage_mor, data_source)
+      ems_metadata = []
+      parent_mor = storage_mor
+
+      until parent_mor.nil?
+        if parent_mor == storage_mor
+          parent_mor, parent = data_source[parent_type = :folder].find { |_mor, data| get_mors(data, 'childEntity').include?(storage_mor) }
+        else
+          parent_type, parent = ems_metadata_target_by_mor(parent_mor, data_source)
+        end
+
+        break if parent.nil?
+        ems_metadata << [parent_type, parent_mor, parent]
+
         parent_mor = parent['parent']
       end
 

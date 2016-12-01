@@ -25,6 +25,8 @@ class EventStream < ApplicationRecord
 
   belongs_to :middleware_server, :foreign_key => :middleware_server_id
 
+  belongs_to :storage, :foreign_key => :storage_id
+
   after_commit :emit_notifications, :on => :create
 
   def emit_notifications

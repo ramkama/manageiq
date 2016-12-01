@@ -115,6 +115,7 @@ class EmsEvent < EventStream
     process_host_in_event!(event_hash, :prefix => "dest_")
     process_availability_zone_in_event!(event_hash)
     process_cluster_in_event!(event_hash)
+    process_datastore_in_event!(event_hash)
     process_container_entities_in_event!(event_hash)
     process_middleware_entities_in_event!(event_hash)
 
@@ -201,6 +202,10 @@ class EmsEvent < EventStream
 
   def self.process_cluster_in_event!(event, options = {})
     process_object_in_event!(EmsCluster, event, options)
+  end
+
+  def self.process_datastore_in_event!(event, options = {})
+    process_object_in_event!(Storage, event, options)
   end
 
   def self.first_chained_event(ems_id, chain_id)
@@ -333,6 +338,10 @@ class EmsEvent < EventStream
     (host && host.ext_management_system ? host : ems_refresh_target)
   end
   alias_method :src_host_refresh_target, :host_refresh_target
+
+  def storage_refresh_target
+  end
+  alias_method :src_storage_refresh_target, :storage_refresh_target
 
   def dest_vm_refresh_target
     (dest_vm_or_template && dest_vm_or_template.ext_management_system ? dest_vm_or_template : dest_host_refresh_target)

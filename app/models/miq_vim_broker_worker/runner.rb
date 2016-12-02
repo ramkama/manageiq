@@ -113,12 +113,12 @@ class MiqVimBrokerWorker::Runner < MiqWorker::Runner
     ret == :ignore ? nil : ret
   end
 
-  def do_before_work_loop
-    if @active_roles.include?("ems_inventory") && @initial_emses_to_monitor.length > 0
-      _log.info("#{log_prefix} Queueing initial refresh for EMS.")
-      EmsRefresh.queue_refresh(@initial_emses_to_monitor)
-    end
-  end
+  #def do_before_work_loop
+  #  if @active_roles.include?("ems_inventory") && @initial_emses_to_monitor.length > 0
+  #    _log.info("#{log_prefix} Queueing initial refresh for EMS.")
+  #    EmsRefresh.queue_refresh(@initial_emses_to_monitor)
+  #  end
+  #end
 
   def log_status
     t = Time.now.utc

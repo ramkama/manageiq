@@ -104,20 +104,11 @@ class MiqEmsRefreshSkeletalWorker::Runner < MiqWorker::Runner
     end
   end
 
-  def process_update(update)
-    kind, mor, props = update
-    ems_id = @ems.id
+  def process_update(updates)
+    _log.info("#{log_prefix} Updates: #{updates.inspect}")
 
-    _log.info("#{log_prefix} Update: #{update.inspect}")
+    inv = @ems.class::RefreshParserSkeletal.parse_updates(updates)
 
-    case kind
-    when 'enter', 'modify'
-      case mor.vimType
-      when 'VirtualMachine'
-        target = EmsRefresh.save_new_target(:vm => {:ems_ref => mor, :ems_id => ems_id}, :ems_id => ems_id)
-      end
-    when 'leave'
-      # Delete the managed entity
-    end
+    EmsRefresh.save_ems_inventory(@ems, inv) unless inv.nil?
   end
 end

@@ -61,7 +61,7 @@ class MiqEmsRefreshSkeletalWorker::Runner < MiqWorker::Runner
     tid = Thread.new do
       begin
         @vim = MiqVimSkeletalUpdater.new(@ems.hostname, @ems.authentication_userid, @ems.authentication_password)
-        @vim.monitorUpdates { |*u| @queue.enq(u) }
+        @vim.monitorUpdates { |u| @queue.enq(u) }
       rescue Handsoap::Fault => err
         if  @exit_requested && (err.code == "ServerFaultCode") && (err.reason == "The task was canceled by a user.")
           _log.info("#{log_prefix} Thread terminated normally")

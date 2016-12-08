@@ -7,11 +7,12 @@ module ManageIQ::Providers
         # Create a hash on ManagedEntity type from a flat updates array
         inv = updates_by_mor_type(updates)
 
-        result[:folders]  = folder_inv_to_hashes(inv['Folder'] + inv['Datacenter'])
-        result[:storages] = storage_inv_to_hashes(inv['Datastore'])
-        result[:clusters] = cluster_inv_to_hashes(inv['ComputeResource'] + inv['ClusterComputeResource'])
-        result[:hosts]    = host_inv_to_hashes(inv['HostSystem'])
-        result[:vms]      = vm_inv_to_hashes(inv['VirtualMachine'])
+        result[:folders]        = folder_inv_to_hashes(inv['Folder'] + inv['Datacenter'])
+        result[:storages]       = storage_inv_to_hashes(inv['Datastore'])
+        result[:clusters]       = cluster_inv_to_hashes(inv['ComputeResource'] + inv['ClusterComputeResource'])
+        result[:resource_pools] = rp_inv_to_hashes(inv['ResourcePool'])
+        result[:hosts]          = host_inv_to_hashes(inv['HostSystem'])
+        result[:vms]            = vm_inv_to_hashes(inv['VirtualMachine'])
 
         result
       end
@@ -32,6 +33,7 @@ module ManageIQ::Providers
             :type        => type,
             :ems_ref     => mor,
             :ems_ref_obj => mor,
+            :uid_ems     => mor,
             :name        => props['name'],
           }
 
@@ -67,6 +69,7 @@ module ManageIQ::Providers
           new_result = {
             :ems_ref     => mor,
             :ems_ref_obj => mor,
+            :uid_ems     => mor,
             :name        => props['name']
           }
 
@@ -76,6 +79,24 @@ module ManageIQ::Providers
         result
       end
       private_class_method :cluster_inv_to_hashes
+
+      def self.rp_inv_to_hashes(inv)
+        result = []
+
+        inv.each do |mor, props|
+          new_result = {
+            :ems_ref     => mor,
+            :ems_ref_obj => mor,
+            :uid_ems     => mor,
+            :name        => props['name']
+          }
+
+          result << new_result
+        end
+
+        result
+      end
+      private_class_method :rp_inv_to_hashes
 
       def self.host_inv_to_hashes(inv)
         result = []

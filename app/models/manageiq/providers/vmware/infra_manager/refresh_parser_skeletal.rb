@@ -12,6 +12,7 @@ module ManageIQ::Providers
         result[:clusters]       = cluster_inv_to_hashes(inv['ComputeResource'] + inv['ClusterComputeResource'])
         result[:resource_pools] = rp_inv_to_hashes(inv['ResourcePool'])
         result[:hosts]          = host_inv_to_hashes(inv['HostSystem'])
+        result[:lans]           = lan_inv_to_hashes(inv['Network'] + inv['DistributedVirtualPortgroup'])
         result[:vms]            = vm_inv_to_hashes(inv['VirtualMachine'])
 
         result
@@ -118,6 +119,23 @@ module ManageIQ::Providers
         result
       end
       private_class_method :host_inv_to_hashes
+
+      def self.lan_inv_to_hashes(inv)
+        result = []
+
+        inv.each do |mor, props|
+          new_result = {
+            :ems_ref     => mor,
+            :ems_ref_obj => mor,
+            :name        => props['name'],
+          }
+
+          result << new_result
+        end
+
+        result
+      end
+      private_class_method :lan_inv_to_hashes
 
       def self.vm_inv_to_hashes(inv)
         result = []

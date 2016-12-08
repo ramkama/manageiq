@@ -9,11 +9,38 @@ module ManageIQ::Providers
 
         result[:folders]  = folder_inv_to_hashes(inv['Folder'] + inv['Datacenter'])
         result[:storages] = storage_inv_to_hashes(inv['Datastore'])
+        result[:clusters] = cluster_inv_to_hashes(inv['ComputeResource'] + inv['ClusterComputeResource'])
         result[:hosts]    = host_inv_to_hashes(inv['HostSystem'])
         result[:vms]      = vm_inv_to_hashes(inv['VirtualMachine'])
 
         result
       end
+
+      def self.folder_inv_to_hashes(inv)
+        result = []
+
+        inv.each do |mor, props|
+          type = case mor.vimType
+                 when 'Datacenter'
+                   'Datacenter'
+                 when 'Folder'
+                   'EmsFolder'
+                 end
+          next if type.nil?
+
+          new_result = {
+            :type        => type,
+            :ems_ref     => mor,
+            :ems_ref_obj => mor,
+            :name        => props['name'],
+          }
+
+          result << new_result
+        end
+
+        result
+      end
+      private_class_method :folder_inv_to_hashes
 
       def self.storage_inv_to_hashes(inv)
         result = []
@@ -33,17 +60,14 @@ module ManageIQ::Providers
       end
       private_class_method :storage_inv_to_hashes
 
-      def self.host_inv_to_hashes(inv)
+      def self.cluster_inv_to_hashes(inv)
         result = []
 
         inv.each do |mor, props|
-          type = "ManageIQ::Providers::Vmware::InfraManager::HostEsx"
-
           new_result = {
-            :type        => type,
             :ems_ref     => mor,
             :ems_ref_obj => mor,
-            :name        => props['name'],
+            :name        => props['name']
           }
 
           result << new_result
@@ -51,19 +75,14 @@ module ManageIQ::Providers
 
         result
       end
-      private_class_method :host_inv_to_hashes
+      private_class_method :cluster_inv_to_hashes
 
-      def self.folder_inv_to_hashes(inv)
+      def self.host_inv_to_hashes(inv)
         result = []
 
         inv.each do |mor, props|
-          type = case mor.vimType
-                 when 'Datacenter'
-                   'Datacenter'
-                 when 'Folder'
-                   'EmsFolder'
-                 end
-          next if type.nil?
+          # TODO: check if is an ESX or ESXi host
+          type = "ManageIQ::Providers::Vmware::InfraManager::HostEsx"
 
           new_result = {
             :type        => type,
@@ -104,7 +123,7 @@ module ManageIQ::Providers
 
         result
       end
-      private_class_method :host_inv_to_hashes
+      private_class_method :vm_inv_to_hashes
 
       def self.updates_by_mor_type(updates)
         result = Hash.new { |h, k| h[k] = [] }

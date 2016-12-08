@@ -1,6 +1,6 @@
 require 'thread'
 
-class MiqEmsRefreshSkeletalWorker::Runner < MiqWorker::Runner
+class ManageIQ::Providers::Vmware::InfraManager::SkeletalRefreshWorker::Runner < MiqWorker::Runner
   self.wait_for_worker_monitor = false
 
   OPTIONS_PARSER_SETTINGS = MiqWorker::Runner::OPTIONS_PARSER_SETTINGS + [

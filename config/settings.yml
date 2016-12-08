@@ -1185,11 +1185,11 @@
       :poll_method: :normal
       :restart_interval: 0.hours
       :starting_timeout: 10.minutes
-    :ems_refresh_core_worker:
+    :ems_skeletal_refresh_worker_vmware:
       :poll: 1.seconds
       :nice_delta: 1
       :thread_shutdown_timeout: 10.seconds
-    :ems_refresh_skeletal_worker:
+    :ems_refresh_core_worker:
       :poll: 1.seconds
       :nice_delta: 1
       :thread_shutdown_timeout: 10.seconds

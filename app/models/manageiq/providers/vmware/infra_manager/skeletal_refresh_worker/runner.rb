@@ -107,7 +107,7 @@ class ManageIQ::Providers::Vmware::InfraManager::SkeletalRefreshWorker::Runner <
   def process_update(updates)
     _log.info("#{log_prefix} Updates: #{updates.inspect}")
 
-    inv = @ems.class::RefreshParserSkeletal.parse_updates(updates)
+    inv = @ems.class::RefreshParserSkeletal.parse_updates(@ems, updates)
 
     EmsRefresh.save_ems_inventory(@ems, inv) unless inv.nil?
   end

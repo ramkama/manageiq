@@ -1,7 +1,15 @@
 module ManageIQ::Providers
   module Vmware
-    module InfraManager::RefreshParserSkeletal
-      def self.parse_updates(updates)
+    class InfraManager::RefreshParserSkeletal < ManageIQ::Providers::InfraManager::RefreshParser
+      def self.parse_updates(ems, updates, options = nil)
+        new(ems, options).parse_updates(updates)
+      end
+
+      def initialize(ems, _options = nil)
+        @ems = ems
+      end
+
+      def parse_updates(updates)
         result = {}
 
         # Create a hash on ManagedEntity type from a flat updates array
@@ -18,49 +26,44 @@ module ManageIQ::Providers
         result
       end
 
-      def self.folder_inv_to_hashes(inv)
+      private
+
+      def folder_inv_to_hashes(inv)
         folder_inv = inv['Folder'] + inv['Datacenter']
         process_collection(folder_inv) { |mor, props| parse_folder(mor, props) }
       end
-      private_class_method :folder_inv_to_hashes
 
-      def self.storage_inv_to_hashes(inv)
+      def storage_inv_to_hashes(inv)
         storage_inv = inv['Datastore']
         process_collection(storage_inv) { |mor, props| parse_storage(mor, props) }
       end
-      private_class_method :storage_inv_to_hashes
 
-      def self.cluster_inv_to_hashes(inv)
+      def cluster_inv_to_hashes(inv)
         cluster_inv = inv['ComputeResource'] + inv['ClusterComputeResource']
         process_collection(cluster_inv) { |mor, props| parse_cluster(mor, props) }
       end
-      private_class_method :cluster_inv_to_hashes
 
-      def self.rp_inv_to_hashes(inv)
+      def rp_inv_to_hashes(inv)
         rp_inv = inv['ResourcePool']
         process_collection(rp_inv) { |mor, props| parse_rp(mor, props) }
       end
-      private_class_method :rp_inv_to_hashes
 
-      def self.host_inv_to_hashes(inv)
+      def host_inv_to_hashes(inv)
         host_inv = inv['HostSystem']
         process_collection(host_inv) { |mor, props| parse_host(mor, props) }
       end
-      private_class_method :host_inv_to_hashes
 
-      def self.lan_inv_to_hashes(inv)
+      def lan_inv_to_hashes(inv)
         lan_inv = inv['Network'] + inv['DistributedVirtualPortgroup']
         process_collection(lan_inv) { |mor, props| parse_lan(mor, props) }
       end
-      private_class_method :lan_inv_to_hashes
 
-      def self.vm_inv_to_hashes(inv)
+      def vm_inv_to_hashes(inv)
         vm_inv = inv['VirtualMachine']
         process_collection(vm_inv) { |mor, props| parse_vm(mor, props) }
       end
-      private_class_method :vm_inv_to_hashes
 
-      def self.parse_folder(mor, props)
+      def parse_folder(mor, props)
         type = case mor.vimType
                when 'Datacenter'
                  'Datacenter'
@@ -79,9 +82,8 @@ module ManageIQ::Providers
 
         return mor, new_result
       end
-      private_class_method :parse_folder
 
-      def self.parse_storage(mor, props)
+      def parse_storage(mor, props)
         new_result = {
           :ems_ref     => mor,
           :ems_ref_obj => mor,
@@ -91,9 +93,8 @@ module ManageIQ::Providers
 
         return mor, new_result
       end
-      private_class_method :parse_storage
 
-      def self.parse_cluster(mor, props)
+      def parse_cluster(mor, props)
         new_result = {
           :ems_ref     => mor,
           :ems_ref_obj => mor,
@@ -103,9 +104,8 @@ module ManageIQ::Providers
 
         return mor, new_result
       end
-      private_class_method :parse_cluster
 
-      def self.parse_rp(mor, props)
+      def parse_rp(mor, props)
         new_result = {
           :ems_ref     => mor,
           :ems_ref_obj => mor,
@@ -115,9 +115,8 @@ module ManageIQ::Providers
 
         return mor, new_result
       end
-      private_class_method :parse_rp
 
-      def self.parse_host(mor, props)
+      def parse_host(mor, props)
         # TODO: check if is an ESX or ESXi host
         type = "ManageIQ::Providers::Vmware::InfraManager::HostEsx"
 
@@ -131,9 +130,8 @@ module ManageIQ::Providers
 
         return mor, new_result
       end
-      private_class_method :parse_host
 
-      def self.parse_lan(mor, props)
+      def parse_lan(mor, props)
         new_result = {
           :ems_ref     => mor,
           :ems_ref_obj => mor,
@@ -142,9 +140,8 @@ module ManageIQ::Providers
 
         return mor, new_result
       end
-      private_class_method :parse_lan
 
-      def self.parse_vm(mor, props)
+      def parse_vm(mor, props)
         template = props['summary.config.template'].to_s.downcase == 'true'
         type     = "ManageIQ::Providers::Vmware::InfraManager::#{template ? 'Template' : 'Vm'}"
 
@@ -163,9 +160,8 @@ module ManageIQ::Providers
 
         return mor, new_result
       end
-      private_class_method :parse_vm
 
-      def self.updates_by_mor_type(updates)
+      def updates_by_mor_type(updates)
         result = Hash.new { |h, k| h[k] = [] }
 
         updates.each do |_kind, mor, props|
@@ -174,9 +170,8 @@ module ManageIQ::Providers
 
         result
       end
-      private_class_method :updates_by_mor_type
 
-      def self.process_collection(inv)
+      def process_collection(inv)
         result = []
 
         inv.each do |mor, item|
@@ -188,7 +183,6 @@ module ManageIQ::Providers
 
         return result
       end
-      private_class_method :process_collection
     end
   end
 end

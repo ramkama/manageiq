@@ -41,6 +41,15 @@ module ManageIQ::Providers
         disconnect_from_ems(ems)
       end
 
+      def collect_skeletal_inventory_for_targets(ems, targets)
+        targets_with_data = targets.collect do |target|
+          skeletal_data = get_skeletal_data(ems, target)
+          [target, skeletal_data]
+        end
+      ensure
+        disconnect_from_ems(ems)
+      end
+
       def parse_targeted_inventory(ems, _target, inventory)
         log_header = format_ems_for_logging(ems)
         _log.debug "#{log_header} Parsing VC inventory..."
@@ -186,6 +195,34 @@ module ManageIQ::Providers
         end
 
         EmsRefresh.log_inv_debug_trace(@ems_data, "#{_log.prefix} #{log_header} ext_management_system_inv:")
+      end
+
+      def skeletal_accessor(target)
+        case target
+        when Host
+          [:host, :hostSystemByMor]
+        when VmOrTemplate
+          [:vm, :virtualMachineByMor]
+        end
+      end
+
+      def get_skeletal_data(ems, target)
+        log_header = format_ems_for_logging(ems)
+
+        cleanup_callback = proc { @vc_data = nil }
+
+        type, accessor = skeletal_accessor(target)
+
+        vc_data = Hash.new { |h, k| h[k] = {} }
+        retrieve_from_vc(ems, cleanup_callback) do
+          inv_hash = @vi.send(accessor, target.ems_ref_obj, :"ems_refresh_#{type}")
+          if inv_hash
+            mor = inv_hash["MOR"]
+            vc_data[type][mor] = inv_hash
+          end
+        end
+
+        vc_data
       end
 
       MAX_RETRIES = 5

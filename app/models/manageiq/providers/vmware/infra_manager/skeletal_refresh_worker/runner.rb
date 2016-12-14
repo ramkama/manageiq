@@ -108,7 +108,25 @@ class ManageIQ::Providers::Vmware::InfraManager::SkeletalRefreshWorker::Runner <
     _log.info("#{log_prefix} Updates: #{updates.inspect}")
 
     inv = @ems.class::RefreshParserSkeletal.parse_updates(@ems, updates)
+    return if inv.nil?
 
-    EmsRefresh.save_ems_inventory(@ems, inv) unless inv.nil?
+    EmsRefresh.save_ems_inventory(@ems, inv)
+    inv.each do |type, inv|
+      # For now these are the only types we can target
+      next unless [:vms, :hosts].include?(type)
+
+      inv.each do |target_hash|
+        target_id = target_hash[:id]
+        next if target_id.nil?
+
+        target_type = if type == :vms
+                        VmOrTemplate
+                      elsif type == :hosts
+                        Host
+                      end
+
+        EmsRefresh.queue_skeletal_refresh(@ems, target_type, target_id)
+      end
+    end
   end
 end

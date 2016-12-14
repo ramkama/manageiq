@@ -128,14 +128,6 @@ describe MiqVimBrokerWorker::Runner do
         expect(EmsRefresh).to receive(:queue_refresh).never
         @vim_broker_worker.do_before_work_loop
       end
-
-      it "should call EmsRefresh.queue_refresh when active roles includes 'ems_inventory' and there are EMSes to monitor" do
-        @vim_broker_worker.instance_variable_set(:@active_roles, ['foo', 'bar', 'ems_inventory'])
-        emses = @zone.ext_management_systems
-        @vim_broker_worker.instance_variable_set(:@initial_emses_to_monitor, emses)
-        expect(EmsRefresh).to receive(:queue_refresh).with(emses).once
-        @vim_broker_worker.do_before_work_loop
-      end
     end
 
     context "#create_miq_vim_broker_server" do

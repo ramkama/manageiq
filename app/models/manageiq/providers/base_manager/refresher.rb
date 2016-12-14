@@ -10,6 +10,10 @@ module ManageIQ
         new(targets).refresh
       end
 
+      def self.skeletal_refresh(targets)
+        new(targets).skeletal_refresh
+      end
+
       def initialize(targets)
         group_targets_by_ems(targets)
       end

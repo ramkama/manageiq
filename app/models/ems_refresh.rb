@@ -71,9 +71,42 @@ module EmsRefresh
     )
   end
 
+  def self.queue_skeletal_refresh(ems, target, id = nil)
+    MiqQueue.put(
+      :queue_name  => MiqEmsRefreshWorker.queue_name_for_ems(ems),
+      :class_name  => name,
+      :method_name => 'skeletal_refresh',
+      :role        => "ems_inventory",
+      :zone        => ems.my_zone,
+      :args        => [target, id],
+      :msg_timeout => queue_timeout,
+      :task_id     => nil
+    )
+  end
+
   def self.refresh(target, id = nil)
     EmsRefresh.init_console if defined?(Rails::Console)
 
+    groups = group_refresh_targets(target, id)
+
+    # Do the refreshes
+    groups.each do |refresher, group_targets|
+      refresher.refresh(group_targets) if refresher
+    end
+  end
+
+  def self.skeletal_refresh(target, id = nil)
+    EmsRefresh.init_console if defined?(Rails::Console)
+
+    groups = group_refresh_targets(target, id)
+
+    # Do the refreshes
+    groups.each do |refresher, group_targets|
+      refresher.skeletal_refresh(group_targets) if refresher
+    end
+  end
+
+  def self.group_refresh_targets(target, id = nil)
     # Handle targets passed as a single class/id pair, an array of class/id pairs, or an array of references
     targets = get_ar_objects(target, id)
 
@@ -86,12 +119,8 @@ module EmsRefresh
             end
       ems.refresher if ems.respond_to?(:refresher)
     end
-
-    # Do the refreshes
-    groups.each do |refresher, group_targets|
-      refresher.refresh(group_targets) if refresher
-    end
   end
+  private_class_method :group_refresh_targets
 
   def self.refresh_new_target(target_hash, ems_id)
     ems = ExtManagementSystem.find(ems_id)

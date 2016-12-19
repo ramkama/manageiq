@@ -108,7 +108,7 @@ class ManageIQ::Providers::Vmware::InfraManager
         summary = dvs_data["summary"]
         next if summary.nil?
 
-        dvs_hosts = RefreshParser.get_dvswitch_hosts(dvswitches, dvs_mor)
+        dvs_hosts = RefreshParser::Dvswitch.get_dvswitch_hosts(dvswitches, dvs_mor)
         next unless dvs_hosts.include?(host_mor)
 
         dvswitch_inv[dvs_mor] = dvs_data
@@ -371,7 +371,7 @@ class ManageIQ::Providers::Vmware::InfraManager
     end
 
     def host_parent_resource(*args)
-      RefreshParser.host_parent_resource(*args)
+      RefreshParser::Host.host_parent_resource(*args)
     end
 
     def ems_metadata_target_by_mor(*args)

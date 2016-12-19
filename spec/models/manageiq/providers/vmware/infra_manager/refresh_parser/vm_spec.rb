@@ -1,4 +1,4 @@
-describe ManageIQ::Providers::Vmware::InfraManager::RefreshParser do
+describe ManageIQ::Providers::Vmware::InfraManager::RefreshParser::VM do
   context ".vm_inv_to_hardware_hash" do
     context "properly calculates cores and sockets" do
       let(:inv) { {"summary" => {"config" => {"name" => "a"}}} }

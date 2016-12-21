@@ -10,18 +10,21 @@ module ManageIQ::Providers
       end
 
       def parse_updates(updates)
+        uids = {}
         result = {}
 
         # Create a hash on ManagedEntity type from a flat updates array
         inv = updates_by_mor_type(updates)
 
-        result[:folders]        = folder_inv_to_hashes(inv)
-        result[:storages]       = storage_inv_to_hashes(inv)
-        result[:clusters]       = cluster_inv_to_hashes(inv)
-        result[:resource_pools] = rp_inv_to_hashes(inv)
-        result[:hosts]          = host_inv_to_hashes(inv)
-        result[:lans]           = lan_inv_to_hashes(inv)
-        result[:vms]            = vm_inv_to_hashes(inv)
+        result[:folders],        uids[:folders]        = folder_inv_to_hashes(inv)
+        result[:storages],       uids[:storages]       = storage_inv_to_hashes(inv)
+        result[:clusters],       uids[:clusters]       = cluster_inv_to_hashes(inv)
+        result[:resource_pools], uids[:resource_pools] = rp_inv_to_hashes(inv)
+        result[:hosts],          uids[:hosts]          = host_inv_to_hashes(inv)
+        result[:lans],           uids[:lans]           = lan_inv_to_hashes(inv)
+        result[:vms],            uids[:vms]            = vm_inv_to_hashes(inv)
+
+        link_ems_metadata(result, uids)
 
         result
       end
@@ -78,6 +81,7 @@ module ManageIQ::Providers
           :ems_ref_obj => mor,
           :uid_ems     => mor,
           :name        => props['name'],
+          :parent      => props['parent']
         }
 
         return mor, new_result
@@ -88,7 +92,8 @@ module ManageIQ::Providers
           :ems_ref     => mor,
           :ems_ref_obj => mor,
           :name        => props['name'],
-          :location    => props['summary.url']
+          :location    => props['summary.url'],
+          :parent      => props['parent']
         }
 
         return mor, new_result
@@ -99,7 +104,8 @@ module ManageIQ::Providers
           :ems_ref     => mor,
           :ems_ref_obj => mor,
           :uid_ems     => mor,
-          :name        => props['name']
+          :name        => props['name'],
+          :parent      => props['parent']
         }
 
         return mor, new_result
@@ -110,7 +116,8 @@ module ManageIQ::Providers
           :ems_ref     => mor,
           :ems_ref_obj => mor,
           :uid_ems     => mor,
-          :name        => props['name']
+          :name        => props['name'],
+          :parent      => props['parent']
         }
 
         return mor, new_result
@@ -126,6 +133,7 @@ module ManageIQ::Providers
           :ems_ref_obj => mor,
           # TODO: get the hostname
           :name        => props['name'],
+          :parent      => props['parent']
         }
 
         return mor, new_result
@@ -136,6 +144,7 @@ module ManageIQ::Providers
           :ems_ref     => mor,
           :ems_ref_obj => mor,
           :name        => props['name'],
+          :parent      => props['parent']
         }
 
         return mor, new_result
@@ -155,10 +164,61 @@ module ManageIQ::Providers
           :name            => props['name'],
           :uid_ems         => props['summary.config.uuid'],
           :template        => template,
-          :raw_power_state => raw_power_state
+          :raw_power_state => raw_power_state,
+          :parent          => props['parent']
         }
 
         return mor, new_result
+      end
+
+      def link_parent(type, data, uids)
+        parent_uid = data.delete(:parent)
+        return if parent_uid.nil?
+
+        parent_type, parent_inv = inv_target_by_mor(parent_uid, uids)
+        return if parent_type.nil? || parent_inv.nil?
+
+        parent_inv[:ems_children] ||= {}
+        parent_inv[:ems_children][type] ||= []
+        parent_inv[:ems_children][type] << data
+      end
+
+      def link_children(data, uids)
+        # TODO: pick up on any additional child_uids
+      end
+
+      def link_root_folder(data)
+        # Find the folder that does not have a parent folder
+
+        # Since the root folder is almost always called "Datacenters", move that
+        #   folder to the head of the list as an optimization
+        dcs, folders = data[:folders].partition { |f| f[:name] == "Datacenters" }
+        dcs.each { |dc| folders.unshift(dc) }
+        data[:folders] = folders
+
+        found = data[:folders].find do |child|
+          !data[:folders].any? do |parent|
+            children = parent.fetch_path(:ems_children, :folders)
+            children && children.any? { |c| c.object_id == child.object_id }
+          end
+        end
+
+        unless found.nil?
+          data[:ems_root] = found
+        else
+          _log.warn "Unable to find a root folder."
+        end
+      end
+
+      def link_ems_metadata(result, uids)
+        result.keys.each do |type|
+          result[type].each do |data|
+            link_parent(type, data, uids)
+            link_children(data, uids)
+          end
+        end
+
+        link_root_folder(result)
       end
 
       def updates_by_mor_type(updates)
@@ -173,15 +233,36 @@ module ManageIQ::Providers
 
       def process_collection(inv)
         result = []
+        result_uids = {}
 
         inv.each do |mor, item|
-          _uid, new_result = yield(mor, item)
+          uid, new_result = yield(mor, item)
           next if new_result.nil?
 
           result << new_result
+          result_uids[mor] = new_result
         end
 
-        return result
+        return result, result_uids
+      end
+
+      VC_MOR_FILTERS = [
+        [:folders,     'Datacenter'],
+        [:folders,     'Folder'],
+      ]
+
+      def inv_target_by_mor(mor, inv)
+        target_type = target = nil
+        mor_type = mor.vimType
+
+        VC_MOR_FILTERS.each do |type, mor_filter|
+          next unless mor_type.nil? || mor_type == mor_filter
+          target = inv[target_type = type][mor]
+          break unless target.nil?
+        end
+
+        target_type = nil if target.nil?
+        return target_type, target
       end
     end
   end

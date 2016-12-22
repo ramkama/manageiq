@@ -117,7 +117,8 @@ module ManageIQ::Providers
           :ems_ref_obj => mor,
           :uid_ems     => mor,
           :name        => props['name'],
-          :parent      => props['parent']
+          :parent      => props['parent'],
+          :child_uids  => get_mors(props, "vm")
         }
 
         return mor, new_result
@@ -184,7 +185,17 @@ module ManageIQ::Providers
       end
 
       def link_children(data, uids)
-        # TODO: pick up on any additional child_uids
+        child_uids = data.delete(:child_uids)
+        return if child_uids.blank?
+
+        data[:ems_children] ||= {}
+        child_uids.each do |child_uid|
+          child_type, child_inv = inv_target_by_mor(child_uid, uids)
+          next if child_type.nil? || child_inv.nil?
+
+          data[:ems_children][child_type] ||= []
+          data[:ems_children][child_type] << child_inv
+        end
       end
 
       def link_root_folder(data)
@@ -246,9 +257,18 @@ module ManageIQ::Providers
         return result, result_uids
       end
 
+      def get_mors(inv, key)
+        # Take care of case where a single or no element is a String
+        return [] unless inv.kind_of?(Hash)
+        d = inv[key]
+        d = d['ManagedObjectReference'] if d.kind_of?(Hash)
+        d.to_miq_a
+      end
+
       VC_MOR_FILTERS = [
         [:folders,     'Datacenter'],
         [:folders,     'Folder'],
+        [:vms,         'VirtualMachine'],
       ]
 
       def inv_target_by_mor(mor, inv)

@@ -155,6 +155,7 @@ module EmsRefresh::VcUpdates
       "summary.datastore",
       "summary.freeSpace",
       "summary.multipleHostAccess",
+      "summary.maintenanceMode",
       "summary.name",
       "summary.type",
       "summary.uncommitted",

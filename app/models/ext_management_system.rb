@@ -42,6 +42,8 @@ class ExtManagementSystem < ApplicationRecord
   has_many :networks,          :through => :hardwares
   has_many :disks,             :through => :hardwares
 
+  has_many :datastores, :foreign_key => "ems_id", :dependent => :destroy, :inverse_of => :ext_management_system
+
   has_many :storages,       -> { distinct },          :through => :hosts
   has_many :ems_events,     -> { order "timestamp" }, :class_name => "EmsEvent",    :foreign_key => "ems_id",
                                                       :inverse_of => :ext_management_system

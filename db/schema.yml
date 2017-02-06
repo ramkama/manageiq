@@ -1027,6 +1027,15 @@ database_backups:
 - name
 - created_at
 - updated_at
+datastores:
+- id
+- ems_id
+- ems_ref
+- ems_ref_obj
+- name
+- storage_id
+- created_at
+- updated_at
 dialog_fields:
 - id
 - name

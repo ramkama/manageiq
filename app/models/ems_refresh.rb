@@ -94,10 +94,12 @@ module EmsRefresh
     end
   end
 
-  def self.refresh_new_target(target_hash, ems_id)
+  def self.refresh_new_target(ems_id, hashes, target_class, target_ems_ref)
     ems = ExtManagementSystem.find(ems_id)
 
-    target = save_new_target(target_hash)
+    save_ems_inventory(ems, hashes, nil)
+
+    target = target_class.find_by(:ems_id => ems_id, :ems_ref => target_ems_ref)
     if target.nil?
       _log.warn "Unknown target for event data: #{target_hash}."
       return

@@ -35,16 +35,15 @@
 
 module EmsRefresh::SaveInventoryInfra
   def save_ems_infra_inventory(ems, hashes, target = nil)
-    target = ems if target.nil?
     log_header = "EMS: [#{ems.name}], id: [#{ems.id}]"
 
     # Check if the data coming in reflects a complete removal from the ems
-    if hashes.blank? || (hashes[:hosts].blank? && hashes[:vms].blank? && hashes[:storages].blank?)
+    if hashes.blank? || (hashes[:hosts].blank? && hashes[:vms].blank? && hashes[:storages].blank? && hashes[:folders].blank?)
       target.disconnect_inv
       return
     end
 
-    prev_relats = vmdb_relats(target)
+    prev_relats = vmdb_relats(target) unless target.nil?
 
     _log.info("#{log_header} Saving EMS Inventory...")
     if debug_trace
@@ -76,8 +75,10 @@ module EmsRefresh::SaveInventoryInfra
 
     _log.info("#{log_header} Saving EMS Inventory...Complete")
 
-    new_relats = hashes_relats(hashes)
-    link_ems_inventory(ems, target, prev_relats, new_relats)
+    unless target.nil?
+      new_relats = hashes_relats(hashes)
+      link_ems_inventory(ems, target, prev_relats, new_relats)
+    end
     remove_obsolete_switches
 
     ems
@@ -240,8 +241,6 @@ module EmsRefresh::SaveInventoryInfra
   end
 
   def save_folders_inventory(ems, hashes, target = nil)
-    target = ems if target.nil?
-
     ems.ems_folders.reset
     deletes = if (target == ems)
                 :use_association

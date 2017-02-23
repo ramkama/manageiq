@@ -350,9 +350,15 @@ module EmsRefresh::VcUpdates
   end
 
   def vc_create_event(ems_id, event)
-    # TODO: Implement
-    _log.debug("Ignoring refresh for EMS id: [#{ems_id}] on event [#{event[:objType]}-create]")
-    nil
+    obj_type, _mor = event.values_at(:objType, :mor)
+
+    type, _klass = OBJ_TYPE_TO_TYPE_AND_CLASS[obj_type]
+    return if type.nil?
+
+    ems = ExtManagementSystem.find(ems_id)
+    ems.class::EventParser.parse_create_event(ems_id, event)
+
+    refresh_new_target(event, ems_id)
   end
 
   def vc_delete_event(ems_id, event)

@@ -292,7 +292,8 @@ module EmsRefresh::VcUpdates
 
   OBJ_TYPE_TO_TYPE_AND_CLASS = {
     'VirtualMachine' => [:vm,   VmOrTemplate],
-    'HostSystem'     => [:host, Host]
+    'HostSystem'     => [:host, Host],
+    'Folder'         => [:folder, EmsFolder]
   }
 
   def self.selected_property?(type, prop)
@@ -356,9 +357,9 @@ module EmsRefresh::VcUpdates
     return if type.nil?
 
     ems = ExtManagementSystem.find(ems_id)
-    ems.class::EventParser.parse_create_event(ems_id, event)
+    klass, ems_ref, hashes = ems.class::EventParser.parse_create_event(ems_id, event)
 
-    refresh_new_target(event, ems_id)
+    refresh_new_target(ems_id, hashes, klass, ems_ref)
   end
 
   def vc_delete_event(ems_id, event)

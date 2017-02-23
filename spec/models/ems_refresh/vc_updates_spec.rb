@@ -41,6 +41,25 @@ describe EmsRefresh::VcUpdates do
     end
   end
 
+  context "handling create events" do
+    let(:ems) { FactoryGirl.create(:ems_vmware) }
+    it "will create a new ems_folder record" do
+      update = {
+        :op      => "create",
+        :objType => "Folder",
+        :mor     => "group-v123"
+      }
+
+      expect(ems.refresher).to receive(:refresh)
+
+      EmsRefresh.vc_update(ems.id, update)
+
+      folder = EmsFolder.find_by(:ems_id => ems.id, :ems_ref => update[:mor])
+      expect(folder).to_not be_nil
+      expect(folder.ems_ref).to eq(update[:mor])
+    end
+  end
+
   it ".selected_property?" do
     EmsRefresh::VcUpdates.with_constants(
       :VIM_SELECTOR_SPEC => {
